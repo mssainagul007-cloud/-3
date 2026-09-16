@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Бортовой журнал инженера — Рефлексия урока КПД</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', 'Orbitron', sans-serif;
+  background: linear-gradient(135deg, #0c0e1b 0%, #1a1d3a 50%, #0f1419 100%);
+  min-height: 100vh;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+.stars {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: starsMove 100s linear infinite;
+  opacity: 0.5;
+  z-index: -1;
+}
+
+@keyframes starsMove {
+  from { transform: translateY(0); }
+  to { transform: translateY(-200px); }
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 150, 255, 0.05) 100%);
+  border: 2px solid #00d4ff;
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.header h1 {
+  font-size: 2.2em;
+  background: linear-gradient(135deg, #00d4ff 0%, #0096ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header .subtitle {
+  color: #00d4ff;
+  font-size: 1.1em;
+  margin-top: 10px;
+}
+
+.screen { display: none; animation: fadeIn 0.5s; }
+.screen.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel {
+  background: linear-gradient(135deg, rgba(10, 20, 40, 0.95) 0%, rgba(20, 30, 60, 0.95) 100%);
+  border: 2px solid #00d4ff;
+  border-radius: 20px;
+  padding: 35px;
+  box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+}
+
+.panel h2 {
+  color: #00d4ff;
+  font-size: 1.6em;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.panel .step-label {
+  text-align: center;
+  color: #a0d4ff;
+  margin-bottom: 25px;
+  font-size: 1em;
+}
+
+.input-group { margin: 20px 0; }
+.input-group label {
+  display: block;
+  color: #00d4ff;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.input-group input, .input-group textarea {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1em;
+  background: rgba(0, 212, 255, 0.1);
+  border: 2px solid #00d4ff;
+  border-radius: 10px;
+  color: #fff;
+  font-family: inherit;
+}
+
+.input-group input:focus, .input-group textarea:focus {
+  outline: none;
+  border-color: #00ff88;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+}
+
+.input-group textarea { min-height: 80px; resize: vertical; }
+
+.btn {
+  background: linear-gradient(135deg, #00d4ff 0%, #0096ff 100%);
+  color: #000;
+  border: none;
+  padding: 15px 40px;
+  font-size: 1.1em;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+  width: 100%;
+  margin-top: 20px;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 30px rgba(0, 212, 255, 0.6);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #666 0%, #444 100%);
+  color: #fff;
+  width: auto;
+  padding: 10px 25px;
+  font-size: 0.9em;
+  margin-top: 10px;
+}
+
+/* Карточки выбора */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.card {
+  background: rgba(0, 212, 255, 0.08);
+  border: 2px solid #00d4ff;
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  font-size: 1em;
+  color: #fff;
+  position: relative;
+}
+
+.card:hover {
+  background: rgba(0, 212, 255, 0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+}
+
+.card.selected {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: #00ff88;
+  box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+}
+
+.card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 8px; right: 12px;
+  color: #00ff88;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.card .icon { font-size: 2em; margin-bottom: 8px; }
+
+/* Эмодзи-рефлексия */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.emoji-card {
+  background: rgba(0, 212, 255, 0.08);
+  border: 2px solid #00d4ff;
+  border-radius: 12px;
+  padding: 20px 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.emoji-card:hover {
+  transform: scale(1.05);
+  background: rgba(0, 212, 255, 0.2);
+}
+
+.emoji-card.selected {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+}
+
+.emoji-card .emoji { font-size: 3em; margin-bottom: 8px; }
+.emoji-card .label { color: #a0d4ff; font-size: 0.9em; }
+
+/* Ползунок понимания */
+.slider-container {
+  margin: 25px 0;
+}
+
+.slider-item {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(0, 212, 255, 0.05);
+  border-radius: 10px;
+  border-left: 4px solid #00d4ff;
+}
+
+.slider-item label {
+  display: block;
+  color: #fff;
+  margin-bottom: 10px;
+  font-size: 1.05em;
+}
+
+.slider-item input[type="range"] {
+  width: 100%;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(90deg, #ff6464 0%, #ffd700 50%, #00ff88 100%);
+  border-radius: 5px;
+  outline: none;
+}
+
+.slider-item input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px; height: 22px;
+  background: #00d4ff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+}
+
+.slider-value {
+  text-align: center;
+  color: #00ff88;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-top: 5px;
+}
+
+/* Прогресс-бар */
+.progress-bar {
+  background: rgba(0, 212, 255, 0.1);
+  border: 2px solid #00d4ff;
+  border-radius: 10px;
+  height: 25px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
+  height: 100%;
+  transition: width 0.5s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+/* Финальный отчёт */
+.report {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid #ffd700;
+  border-radius: 15px;
+  padding: 25px;
+  margin: 20px 0;
+}
+
+.report h3 {
+  color: #ffd700;
+  margin-bottom: 15px;
+  font-size: 1.3em;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  padding-bottom: 8px;
+}
+
+.report-item {
+  margin: 12px 0;
+  padding: 10px;
+  background: rgba(0, 212, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #00d4ff;
+}
+
+.report-item strong { color: #00d4ff; }
+.report-item .value { color: #fff; margin-top: 5px; display: block; }
+
+.report-item .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.report-item .tag {
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.9em;
+  border: 1px solid #00ff88;
+}
+
+.final-score {
+  text-align: center;
+  padding: 25px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 140, 0, 0.1) 100%);
+  border: 3px solid #ffd700;
+  border-radius: 15px;
+  margin: 20px 0;
+}
+
+.final-score .big-emoji { font-size: 4em; margin-bottom: 10px; }
+.final-score .title { color: #ffd700; font-size: 1.5em; font-weight: bold; }
+
+@media print {
+  body { background: white; color: black; }
+  .stars, .btn, .no-print { display: none !important; }
+  .panel { border: 2px solid #000; box-shadow: none; background: white; color: black; }
+  .header { background: #f0f0f0; border-color: #000; }
+  .header h1 { -webkit-text-fill-color: #000; color: #000; }
+  .report { border-color: #000; background: #f9f9f9; }
+  .report h3 { color: #000; }
+  .report-item { border-left-color: #000; background: white; }
+  .report-item strong { color: #000; }
+  .report-item .value { color: #000; }
+  .tag { background: #e0e0e0; color: #000; border-color: #000; }
+  .final-score { background: #fffde7; border-color: #000; }
+  .final-score .title { color: #000; }
+}
+
+@media (max-width: 600px) {
+  .header h1 { font-size: 1.5em; }
+  .panel { padding: 20px; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .emoji-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>🚀 БОРТОВОЙ ЖУРНАЛ ИНЖЕНЕРА</h1>
+    <div class="subtitle">Рефлексия урока: Тепловые двигатели и КПД</div>
+  </div>
+
+  <!-- ШАГ 0: Ввод имени -->
+  <div class="screen active" id="step0">
+    <div class="panel">
+      <h2>👨‍🚀 Инженер, представьтесь!</h2>
+      <p class="step-label">Перед завершением миссии заполните бортовой журнал</p>
+      <div class="input-group">
+        <label>Ваше имя и фамилия:</label>
+        <input type="text" id="engineerName" placeholder="Иванов Иван">
+      </div>
+      <div class="input-group">
+        <label>Класс:</label>
+        <input type="text" id="engineerClass" placeholder="8 А">
+      </div>
+      <button class="btn" onclick="goToStep(1)"> НАЧАТЬ ЗАПОЛНЕНИЕ ЖУРНАЛА</button>
+    </div>
+  </div>
+
+  <!-- ШАГ 1: Что узнал -->
+  <div class="screen" id="step1">
+    <div class="panel">
+      <div class="progress-bar"><div class="progress-fill" style="width:20%">Шаг 1 из 5</div></div>
+      <h2>📚 Что я узнал сегодня?</h2>
+      <p class="step-label">Выберите ВСЁ, что вы узнали или повторили на уроке (можно несколько)</p>
+      <div class="cards-grid" id="learnedCards">
+        <div class="card" data-value="Что такое тепловой двигатель"><div class="icon">⚙️</div>Что такое тепловой двигатель</div>
+        <div class="card" data-value="4 такта ДВС"><div class="icon">🔄</div>4 такта двигателя внутреннего сгорания</div>
+        <div class="card" data-value="Формула КПД"><div class="icon">📐</div>Формулу КПД: η = A/Q × 100%</div>
+        <div class="card" data-value="Почему КПД < 100%"><div class="icon">🔥</div>Почему КПД всегда меньше 100%</div>
+        <div class="card" data-value="Виды тепловых двигателей"><div class="icon">🚗</div>Виды тепловых двигателей</div>
+        <div class="card" data-value="Применение в жизни"><div class="icon"></div>Где применяются тепловые двигатели</div>
+      </div>
+      <button class="btn" onclick="nextStep(1)">ДАЛЕЕ →</button>
+    </div>
+  </div>
+
+  <!-- ШАГ 2: Уровень понимания -->
+  <div class="screen" id="step2">
+    <div class="panel">
+      <div class="progress-bar"><div class="progress-fill" style="width:40%">Шаг 2 из 5</div></div>
+      <h2> Мой уровень понимания</h2>
+      <p class="step-label">Оцените, насколько хорошо вы поняли каждую тему (двигайте ползунок)</p>
+      <div class="slider-container">
+        <div class="slider-item">
+          <label>🔧 Принцип работы теплового двигателя</label>
+          <input type="range" min="1" max="5" value="3" oninput="updateSlider(this, 'v1')">
+          <div class="slider-value" id="v1">3 / 5</div>
+        </div>
+        <div class="slider-item">
+          <label>📐 Формула и расчёт КПД</label>
+          <input type="range" min="1" max="5" value="3" oninput="updateSlider(this, 'v2')">
+          <div class="slider-value" id="v2">3 / 5</div>
+        </div>
+        <div class="slider-item">
+          <label>⚡ Преобразование энергии</label>
+          <input type="range" min="1" max="5" value="3" oninput="updateSlider(this, 'v3')">
+          <div class="slider-value" id="v3">3 / 5</div>
+        </div>
+        <div class="slider-item">
+          <label>🌍 Экология и КПД двигателей</label>
+          <input type="range" min="1" max="5" value="3" oninput="updateSlider(this, 'v4')">
+          <div class="slider-value" id="v4">3 / 5</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="goToStep(1)">← НАЗАД</button>
+      <button class="btn" onclick="nextStep(2)">ДАЛЕЕ →</button>
+    </div>
+  </div>
+
+  <!-- ШАГ 3: Эмоции -->
+  <div class="screen" id="step3">
+    <div class="panel">
+      <div class="progress-bar"><div class="progress-fill" style="width:60%">Шаг 3 из 5</div></div>
+      <h2>😊 Моё состояние после миссии</h2>
+      <p class="step-label">Как вы себя чувствуете после урока? Выберите один вариант</p>
+      <div class="emoji-grid" id="emojiGrid">
+        <div class="emoji-card" data-value="Вдохновлён и готов к новым открытиям"><div class="emoji">🤩</div><div class="label">Вдохновлён</div></div>
+        <div class="emoji-card" data-value="Всё понял, чувствую уверенность"><div class="emoji">😎</div><div class="label">Уверен</div></div>
+        <div class="emoji-card" data-value="Понял основное, но нужно ещё потренироваться"><div class="emoji">🙂</div><div class="label">Нормально</div></div>
+        <div class="emoji-card" data-value="Было интересно, но многое непонятно"><div class="emoji">🤔</div><div class="label">Задумался</div></div>
+        <div class="emoji-card" data-value="Устал, но доволен результатом"><div class="emoji">😌</div><div class="label">Устал, но доволен</div></div>
+        <div class="emoji-card" data-value="Ничего не понял, нужна помощь"><div class="emoji">😵</div><div class="label">Нужна помощь</div></div>
+      </div>
+      <button class="btn btn-secondary" onclick="goToStep(2)">← НАЗАД</button>
+      <button class="btn" onclick="nextStep(3)">ДАЛЕЕ →</button>
+    </div>
+  </div>
+
+  <!-- ШАГ 4: Трудности -->
+  <div class="screen" id="step4">
+    <div class="panel">
+      <div class="progress-bar"><div class="progress-fill" style="width:80%">Шаг 4 из 5</div></div>
+      <h2>🛠️ Что вызвало трудности?</h2>
+      <p class="step-label">Выберите то, что было для вас самым сложным (можно несколько)</p>
+      <div class="cards-grid" id="difficultyCards">
+        <div class="card" data-value="Запомнить формулу КПД"><div class="icon">📝</div>Запомнить формулу КПД</div>
+        <div class="card" data-value="Решать задачи на КПД"><div class="icon">🔢</div>Решать задачи на КПД</div>
+        <div class="card" data-value="Понять 4 такта ДВС"><div class="icon">🔄</div>Понять 4 такта ДВС</div>
+        <div class="card" data-value="Разобраться в видах энергии"><div class="icon">⚡</div>Разобраться в видах энергии</div>
+        <div class="card" data-value="Ничего не было трудным"><div class="icon">✨</div>Ничего не было трудным</div>
+        <div class="card" data-value="Всё было сложно"><div class="icon">🆘</div>Всё было сложно</div>
+      </div>
+      <div class="input-group" style="margin-top:20px;">
+        <label> Хотите что-то добавить учителю? (необязательно)</label>
+        <textarea id="teacherMessage" placeholder="Например: 'Мне было интересно про паровые турбины' или 'Объясните ещё раз формулу'..."></textarea>
+      </div>
+      <button class="btn btn-secondary" onclick="goToStep(3)">← НАЗАД</button>
+      <button class="btn" onclick="nextStep(4)">ЗАВЕРШИТЬ ЖУРНАЛ →</button>
+    </div>
+  </div>
+
+  <!-- ШАГ 5: Финальный отчёт -->
+  <div class="screen" id="step5">
+    <div class="panel">
+      <div class="progress-bar"><div class="progress-fill" style="width:100%">Журнал заполнен!</div></div>
+      <h2>📋 БОРТОВОЙ ЖУРНАЛ ЗАВЕРШЁН</h2>
+      <p class="step-label">Ваш отчёт о миссии готов</p>
+
+      <div class="final-score">
+        <div class="big-emoji" id="finalEmoji">🚀</div>
+        <div class="title" id="finalTitle">МИССИЯ ВЫПОЛНЕНА</div>
+      </div>
+
+      <div class="report" id="reportContent">
+        <!-- Заполняется JS -->
+      </div>
+
+      <div class="no-print">
+        <button class="btn" onclick="window.print()">🖨️ РАСПЕЧАТАТЬ / СОХРАНИТЬ PDF</button>
+        <button class="btn btn-secondary" onclick="location.reload()">🔄 НОВЫЙ ЖУРНАЛ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentStep = 0;
+const data = {
+  name: '',
+  class: '',
+  learned: [],
+  understanding: {},
+  emotion: '',
+  difficulties: [],
+  message: ''
+};
+
+function goToStep(step) {
+  if (step === 1 && currentStep === 0) {
+    const name = document.getElementById('engineerName').value.trim();
+    const cls = document.getElementById('engineerClass').value.trim();
+    if (!name) { alert('⚠️ Введите имя инженера!'); return; }
+    data.name = name;
+    data.class = cls || 'не указан';
+  }
+  currentStep = step;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + step).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep(from) {
+  if (from === 1) {
+    const selected = document.querySelectorAll('#learnedCards .card.selected');
+    if (selected.length === 0) { alert('⚠️ Выберите хотя бы один пункт!'); return; }
+    data.learned = Array.from(selected).map(c => c.dataset.value);
+  }
+  if (from === 2) {
+    data.understanding = {
+      'Принцип работы ТД': document.querySelector('#step2 input[oninput*="v1"]').value,
+      'Формула и расчёт КПД': document.querySelector('#step2 input[oninput*="v2"]').value,
+      'Преобразование энергии': document.querySelector('#step2 input[oninput*="v3"]').value,
+      'Экология и КПД': document.querySelector('#step2 input[oninput*="v4"]').value
+    };
+  }
+  if (from === 3) {
+    const selected = document.querySelector('#emojiGrid .emoji-card.selected');
+    if (!selected) { alert('⚠️ Выберите одно состояние!'); return; }
+    data.emotion = selected.dataset.value;
+  }
+  if (from === 4) {
+    const selected = document.querySelectorAll('#difficultyCards .card.selected');
+    data.difficulties = Array.from(selected).map(c => c.dataset.value);
+    data.message = document.getElementById('teacherMessage').value.trim();
+    generateReport();
+  }
+  goToStep(from + 1);
+}
+
+function updateSlider(el, id) {
+  document.getElementById(id).textContent = el.value + ' / 5';
+}
+
+// Выбор карточек
+document.querySelectorAll('.card, .emoji-card').forEach(card => {
+  card.addEventListener('click', function() {
+    if (this.parentElement.id === 'emojiGrid') {
+      this.parentElement.querySelectorAll('.emoji-card').forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+    } else {
+      this.classList.toggle('selected');
+    }
+  });
+});
+
+function generateReport() {
+  const avgUnderstanding = Object.values(data.understanding).reduce((a, b) => a + parseInt(b), 0) / 4;
+  
+  let emoji, title;
+  if (avgUnderstanding >= 4.5) { emoji = '🏆'; title = 'БЛЕСТЯЩАЯ МИССИЯ!'; }
+  else if (avgUnderstanding >= 3.5) { emoji = '🚀'; title = 'МИССИЯ ВЫПОЛНЕНА УСПЕШНО'; }
+  else if (avgUnderstanding >= 2.5) { emoji = '🔧'; title = 'МИССИЯ ВЫПОЛНЕНА, НО ЕСТЬ НАД ЧЕМ ПОРАБОТАТЬ'; }
+  else { emoji = ''; title = 'МИССИЯ ТРЕБУЕТ ПОДГОТОВКИ'; }
+  
+  document.getElementById('finalEmoji').textContent = emoji;
+  document.getElementById('finalTitle').textContent = title;
+
+  const stars = (val) => '⭐'.repeat(val) + '☆'.repeat(5 - val);
+
+  let html = `
+    <h3>👨‍ ДАННЫЕ ИНЖЕНЕРА</h3>
+    <div class="report-item"><strong>Имя:</strong><span class="value">${data.name}</span></div>
+    <div class="report-item"><strong>Класс:</strong><span class="value">${data.class}</span></div>
+    <div class="report-item"><strong>Дата:</strong><span class="value">${new Date().toLocaleDateString('ru-RU')}</span></div>
+
+    <h3>📚 ЧТО Я УЗНАЛ</h3>
+    <div class="report-item">
+      <div class="tags">
+        ${data.learned.map(t => `<span class="tag">${t}</span>`).join('')}
+      </div>
+    </div>
+
+    <h3>🎯 УРОВЕНЬ ПОНИМАНИЯ</h3>
+    ${Object.entries(data.understanding).map(([k, v]) => `
+      <div class="report-item">
+        <strong>${k}:</strong>
+        <span class="value">${stars(v)} (${v}/5)</span>
+      </div>
+    `).join('')}
+    <div class="report-item" style="background:rgba(255,215,0,0.1); border-left-color:#ffd700;">
+      <strong> Средний уровень понимания:</strong>
+      <span class="value" style="font-size:1.3em; color:#ffd700;">${avgUnderstanding.toFixed(1)} / 5</span>
+    </div>
+
+    <h3>😊 МОЁ СОСТОЯНИЕ</h3>
+    <div class="report-item"><span class="value" style="font-size:1.1em;">${data.emotion}</span></div>
+
+    <h3>🛠️ ТРУДНОСТИ</h3>
+    <div class="report-item">
+      <div class="tags">
+        ${data.difficulties.length ? data.difficulties.map(t => `<span class="tag" style="background:rgba(255,100,100,0.2); color:#ff6464; border-color:#ff6464;">${t}</span>`).join('') : '<span style="color:#a0d4ff;">Трудностей не возникло</span>'}
+      </div>
+    </div>
+  `;
+
+  if (data.message) {
+    html += `
+      <h3>💬 СООБЩЕНИЕ УЧИТЕЛЮ</h3>
+      <div class="report-item"><span class="value">"${data.message}"</span></div>
+    `;
+  }
+
+  document.getElementById('reportContent').innerHTML = html;
+  
+  // Сохраняем в localStorage для учителя
+  const results = JSON.parse(localStorage.getItem('reflectionResults') || '[]');
+  results.push({ ...data, timestamp: new Date().toLocaleString('ru-RU'), avgUnderstanding: avgUnderstanding.toFixed(1) });
+  localStorage.setItem('reflectionResults', JSON.stringify(results));
+}
+</script>
+</body>
+</html>
